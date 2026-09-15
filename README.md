@@ -14,7 +14,7 @@
 | -------- | ------------------ | ----------------------------------------------------------- |
 | **Lead** | Naitik Patel       | [d26ec158@charusat.edu.in](mailto:d26ec158@charusat.edu.in) |
 | Member   | Vraj Savaj         | [d26ec150@charusat.edu.in](mailto:d26ec150@charusat.edu.in) |
-| Member   | Devam Shah         | [d26ec1@charusat.edu.in](mailto:d26ec1@charusat.edu.in)     |
+| Member   | Devam Shah         | [d26ec1@charusat.edu.in](mailto:d26ec151@charusat.edu.in)     |
 | Member   | Abhikumar Mansuria | [25ec001@charusat.edu.in](mailto:25ec001@charusat.edu.in)   |
 
 ---
