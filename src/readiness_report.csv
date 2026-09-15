@@ -1,0 +1,21 @@
+priority_rank,asset_id,asset_type,readiness_status,risk_score,predicted_failure_days,predicted_failure_component,days_to_next_mission,reasons,maintenance_action
+1,AST-006,Comms Equipment,NOT MISSION READY,120,14.7,Temperature,16,Vibration at critical level (8.8 mm/s); Temperature trending up (+0.65°C/day); Pressure critically low (78.0 psi); 5 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records,[IMMEDIATE] Inspect/service Comms Equipment AST-006. Predicted Temperature failure in ~14.7 days. Next mission in 16 days.
+2,AST-008,Aircraft,NOT MISSION READY,110,2.7,Temperature,8,Vibration at critical level (8.7 mm/s); Temperature trending up (+0.70°C/day); Pressure critically low (79.2 psi); 2 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records,[IMMEDIATE] Inspect/service Aircraft AST-008. Predicted Temperature failure in ~2.7 days. Next mission in 8 days.
+3,AST-003,Comms Equipment,NOT MISSION READY,110,5.9,Temperature,3,Vibration at critical level (8.4 mm/s); Temperature trending up (+0.67°C/day); Pressure trending down (-0.62 psi/day); 3 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records,[IMMEDIATE] Inspect/service Comms Equipment AST-003. Predicted Temperature failure in ~5.9 days. Next mission in 3 days.
+4,AST-019,Radar Equipment,NOT MISSION READY,100,4.6,Temperature,40,Vibration at critical level (8.1 mm/s); Temperature trending up (+0.71°C/day); Pressure critically low (77.7 psi); 1 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records,[IMMEDIATE] Inspect/service Radar Equipment AST-019. Predicted Temperature failure in ~4.6 days. Next mission in 40 days.
+5,AST-018,Aircraft,NOT MISSION READY,70,0.1,Vibration,34,Vibration trending up (+0.18 mm/s/day); Temperature trending up (+0.63°C/day); 2 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records,[IMMEDIATE] Inspect/service Aircraft AST-018. Predicted Vibration failure in ~0.1 days. Next mission in 34 days.
+6,AST-004,Aircraft,READY,0,145.7,Pressure,19,No anomalies detected,No action needed — continue standard monitoring.
+7,AST-017,Radar Equipment,READY,0,216.5,Temperature,16,No anomalies detected,No action needed — continue standard monitoring.
+8,AST-016,Aircraft,READY,0,247.7,Vibration,15,No anomalies detected,No action needed — continue standard monitoring.
+9,AST-012,Radar Equipment,READY,0,285.9,Pressure,29,No anomalies detected,No action needed — continue standard monitoring.
+10,AST-002,Ground Vehicle,READY,0,302.1,Temperature,9,No anomalies detected,No action needed — continue standard monitoring.
+11,AST-009,Radar Equipment,READY,0,356.6,Vibration,36,No anomalies detected,No action needed — continue standard monitoring.
+12,AST-010,Radar Equipment,READY,0,360.4,Vibration,7,No anomalies detected,No action needed — continue standard monitoring.
+13,AST-014,Radar Equipment,READY,0,388.4,Temperature,3,No anomalies detected,No action needed — continue standard monitoring.
+14,AST-007,Ground Vehicle,READY,0,435.4,Vibration,10,No anomalies detected,No action needed — continue standard monitoring.
+15,AST-015,Radar Equipment,READY,0,493.4,Pressure,7,No anomalies detected,No action needed — continue standard monitoring.
+16,AST-001,Aircraft,READY,0,545.8,Vibration,42,No anomalies detected,No action needed — continue standard monitoring.
+17,AST-020,Ground Vehicle,READY,0,2014.7,Vibration,3,No anomalies detected,No action needed — continue standard monitoring.
+18,AST-013,Aircraft,READY,0,3072.2,Temperature,4,No anomalies detected,No action needed — continue standard monitoring.
+19,AST-005,Ground Vehicle,READY,0,5433.7,Pressure,17,No anomalies detected,No action needed — continue standard monitoring.
+20,AST-011,Aircraft,READY,0,,,39,No anomalies detected,No action needed — continue standard monitoring.

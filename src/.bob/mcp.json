@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mission-readiness-copilot": {
+      "command": "C:\\Users\\NAITIK N.S. PATEL\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "args": ["repo/src/mcp_server/readiness_mcp_server.py"],
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}

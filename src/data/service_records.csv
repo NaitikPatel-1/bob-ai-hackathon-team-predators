@@ -1,0 +1,74 @@
+asset_id,service_date,part_serviced,notes
+AST-001,2026-08-24,Sensor Module,Replaced due to scheduled interval.
+AST-001,2026-07-31,Sensor Module,Calibration adjusted.
+AST-001,2026-07-15,Fuel Injector,Calibration adjusted.
+AST-001,2026-07-13,Cooling Fan,Inspection passed.
+AST-002,2026-07-10,Cooling Fan,"Minor wear noted, within tolerance."
+AST-002,2026-06-16,Battery Pack,"Minor wear noted, within tolerance."
+AST-002,2026-07-11,Hydraulic Pump,Calibration adjusted.
+AST-002,2026-09-06,Battery Pack,"Minor wear noted, within tolerance."
+AST-003,2026-06-28,Battery Pack,Inspection passed.
+AST-003,2026-07-06,Battery Pack,Calibration adjusted.
+AST-003,2026-09-06,Sensor Module,Calibration adjusted.
+AST-004,2026-06-13,Rotor Blade Seal,"Minor wear noted, within tolerance."
+AST-004,2026-07-08,Bearing Assembly,Replaced due to scheduled interval.
+AST-004,2026-06-23,Cooling Fan,"Routine calendar-based check, no issues found."
+AST-004,2026-08-30,Sensor Module,"Minor wear noted, within tolerance."
+AST-005,2026-06-06,Hydraulic Pump,Calibration adjusted.
+AST-005,2026-07-08,Battery Pack,"Minor wear noted, within tolerance."
+AST-005,2026-08-21,Rotor Blade Seal,Inspection passed.
+AST-005,2026-06-14,Rotor Blade Seal,"Routine calendar-based check, no issues found."
+AST-006,2026-07-31,Fuel Injector,Inspection passed.
+AST-006,2026-07-14,Bearing Assembly,"Routine calendar-based check, no issues found."
+AST-006,2026-07-03,Rotor Blade Seal,Inspection passed.
+AST-006,2026-06-15,Rotor Blade Seal,"Routine calendar-based check, no issues found."
+AST-007,2026-08-02,Hydraulic Pump,Calibration adjusted.
+AST-007,2026-08-20,Battery Pack,"Routine calendar-based check, no issues found."
+AST-007,2026-06-20,Bearing Assembly,Calibration adjusted.
+AST-007,2026-07-09,Hydraulic Pump,"Minor wear noted, within tolerance."
+AST-007,2026-06-16,Sensor Module,Inspection passed.
+AST-008,2026-09-08,Sensor Module,Inspection passed.
+AST-008,2026-07-28,Fuel Injector,Replaced due to scheduled interval.
+AST-008,2026-08-15,Fuel Injector,Replaced due to scheduled interval.
+AST-009,2026-08-18,Battery Pack,"Routine calendar-based check, no issues found."
+AST-009,2026-09-06,Bearing Assembly,"Minor wear noted, within tolerance."
+AST-010,2026-08-24,Hydraulic Pump,"Minor wear noted, within tolerance."
+AST-010,2026-07-01,Bearing Assembly,Calibration adjusted.
+AST-010,2026-06-10,Bearing Assembly,"Routine calendar-based check, no issues found."
+AST-010,2026-07-23,Fuel Injector,Calibration adjusted.
+AST-011,2026-07-08,Hydraulic Pump,"Minor wear noted, within tolerance."
+AST-011,2026-07-07,Battery Pack,Replaced due to scheduled interval.
+AST-011,2026-08-29,Rotor Blade Seal,Inspection passed.
+AST-011,2026-06-10,Battery Pack,"Minor wear noted, within tolerance."
+AST-011,2026-07-04,Rotor Blade Seal,Calibration adjusted.
+AST-012,2026-07-25,Hydraulic Pump,Calibration adjusted.
+AST-012,2026-06-29,Battery Pack,"Minor wear noted, within tolerance."
+AST-012,2026-07-05,Rotor Blade Seal,"Minor wear noted, within tolerance."
+AST-013,2026-06-08,Bearing Assembly,Replaced due to scheduled interval.
+AST-013,2026-08-16,Battery Pack,Calibration adjusted.
+AST-014,2026-07-27,Hydraulic Pump,Inspection passed.
+AST-014,2026-08-28,Cooling Fan,Inspection passed.
+AST-014,2026-07-05,Sensor Module,Calibration adjusted.
+AST-014,2026-08-03,Fuel Injector,"Routine calendar-based check, no issues found."
+AST-015,2026-07-26,Battery Pack,Replaced due to scheduled interval.
+AST-015,2026-08-17,Cooling Fan,"Routine calendar-based check, no issues found."
+AST-016,2026-06-30,Battery Pack,Calibration adjusted.
+AST-016,2026-08-15,Hydraulic Pump,Replaced due to scheduled interval.
+AST-017,2026-09-06,Rotor Blade Seal,"Minor wear noted, within tolerance."
+AST-017,2026-07-31,Sensor Module,Inspection passed.
+AST-018,2026-06-24,Sensor Module,Inspection passed.
+AST-018,2026-08-21,Rotor Blade Seal,Inspection passed.
+AST-018,2026-06-12,Fuel Injector,Replaced due to scheduled interval.
+AST-018,2026-07-23,Cooling Fan,Replaced due to scheduled interval.
+AST-019,2026-06-21,Cooling Fan,Inspection passed.
+AST-019,2026-08-28,Fuel Injector,Replaced due to scheduled interval.
+AST-020,2026-09-06,Sensor Module,"Routine calendar-based check, no issues found."
+AST-020,2026-07-29,Hydraulic Pump,Replaced due to scheduled interval.
+AST-020,2026-07-03,Cooling Fan,"Routine calendar-based check, no issues found."
+AST-020,2026-09-07,Fuel Injector,Calibration adjusted.
+AST-020,2026-06-01,Battery Pack,Calibration adjusted.
+AST-003,2026-07-25,Fuel Injector,Scheduled inspection overdue — deferred due to operational tempo.
+AST-006,2026-08-07,Bearing Assembly,Scheduled inspection overdue — deferred due to operational tempo.
+AST-018,2026-07-23,Cooling Fan,Scheduled inspection overdue — deferred due to operational tempo.
+AST-008,2026-07-20,Rotor Blade Seal,Scheduled inspection overdue — deferred due to operational tempo.
+AST-019,2026-07-24,Battery Pack,Scheduled inspection overdue — deferred due to operational tempo.

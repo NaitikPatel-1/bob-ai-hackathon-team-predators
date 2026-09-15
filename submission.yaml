@@ -1,0 +1,35 @@
+team:
+  name: "[Predators]"                 # REQUIRED - replace before submitting
+  track: "Defense & Aerospace"
+  lead:
+    name: "[Naitik Patel]"                    # REQUIRED
+    email: "[d26ec158@charusat.edu.in]"  # REQUIRED
+  members:
+    - name: "[Vraj Savaj]"
+      email: "[d26ec150@charusat.edu.in]"
+    - name: "[Devam Shah]"
+      email: "[d26ec158@charusat.edu.in]"
+    - name: "[Abhikumar Mansuria]"
+      email: "[25ec001@charusat.edu.in]"
+
+submission:
+  title: "Mission Readiness & Predictive Maintenance Copilot"
+  problem_statement: >
+    Military organisations cannot reliably determine whether aircraft, vehicles,
+    and equipment are mission-ready. Maintenance runs on fixed calendar schedules
+    regardless of actual component condition. HUMS sensor data that could predict
+    failures weeks in advance sits unanalysed, so platforms fail unexpectedly and
+    operational readiness drops.
+  solution_summary: >
+    A Bob-integrated copilot that ingests HUMS sensor logs and service records,
+    classifies each asset's readiness against threshold and drift rules, predicts
+    time-to-failure per component via trend extrapolation, and generates a
+    prioritized, explainable maintenance plan. Bob calls the analysis engine
+    live through an MCP server and turns the results into a natural-language
+    commander briefing.
+  key_features:
+    - "Rule-based readiness classifier (READY / DEGRADED / NOT MISSION READY) using vibration, temperature, and pressure drift"
+    - "Failure prediction via linear trend extrapolation to component-critical thresholds"
+    - "Prioritized maintenance plan ranked by risk score, with plain-English reasons per asset"
+    - "Live MCP integration: Bob calls 4 real tools (fleet summary, asset detail, prioritized plan, pre-mission risk) against current data"
+    - "Interactive command-console dashboard with sensor trend visualization per asset"

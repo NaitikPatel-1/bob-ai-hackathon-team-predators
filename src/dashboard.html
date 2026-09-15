@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mission Readiness Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-alt: #1c222b;
+    --border: #2a313c;
+    --text: #e6e8eb;
+    --text-dim: #8b949e;
+    --green: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --blue: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 28px 32px 60px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    letter-spacing: 0.2px;
+  }
+  .header .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .header .clock {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--blue);
+    font-size: 13px;
+    text-align: right;
+  }
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--panel);
+    padding: 16px 20px;
+  }
+  .stat .num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .stat .label {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .stat.total .num { color: var(--text); }
+  .stat.ready .num { color: var(--green); }
+  .stat.degraded .num { color: var(--amber); }
+  .stat.notready .num { color: var(--red); }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+  .controls .filter-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .controls .filter-btn.active {
+    color: var(--text);
+    border-color: var(--blue);
+  }
+  .controls .count {
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-left: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 11px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  tbody tr:hover {
+    background: var(--panel-alt);
+  }
+  tbody td {
+    padding: 10px 12px;
+    vertical-align: middle;
+  }
+  .asset-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+  .status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    border: 1px solid;
+  }
+  .status-pill.ready { color: var(--green); border-color: var(--green); }
+  .status-pill.degraded { color: var(--amber); border-color: var(--amber); }
+  .status-pill.notready { color: var(--red); border-color: var(--red); background: rgba(248,81,73,0.08); }
+
+  .risk-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .risk-bar-bg {
+    width: 70px;
+    height: 6px;
+    background: var(--border);
+    position: relative;
+  }
+  .risk-bar-fill {
+    height: 100%;
+    position: absolute;
+    left: 0; top: 0;
+  }
+  .risk-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    width: 24px;
+  }
+  .failwin {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+  .failwin.urgent { color: var(--red); }
+  .failwin.soon { color: var(--amber); }
+  .failwin.ok { color: var(--text-dim); }
+
+  /* Detail panel */
+  .detail-row td {
+    padding: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-inner {
+    background: var(--panel);
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 28px;
+  }
+  .detail-inner h4 {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: none;
+    margin: 0 0 8px 0;
+    font-weight: 500;
+  }
+  .reason-list {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .action-box {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--panel-alt);
+    border-left: 3px solid var(--blue);
+    padding: 10px 12px;
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .charts { display: flex; flex-direction: column; gap: 12px; }
+  .chart-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    justify-content: space-between;
+  }
+  svg.trend { width: 100%; height: 40px; display: block; }
+
+  .footer-note {
+    margin-top: 28px;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Mission Readiness &amp; Predictive Maintenance Copilot</h1>
+    <div class="sub">Powered by IBM Bob &middot; Defense &amp; Aerospace &middot; D1</div>
+  </div>
+  <div class="clock" id="clock"></div>
+</div>
+
+<div class="summary-strip" id="summary-strip">
+    <div class="stat total"><div class="num">20</div><div class="label">TOTAL FLEET ASSETS</div></div>
+    <div class="stat ready"><div class="num">15</div><div class="label">READY</div></div>
+    <div class="stat degraded"><div class="num">0</div><div class="label">DEGRADED</div></div>
+    <div class="stat notready"><div class="num">5</div><div class="label">NOT MISSION READY</div></div>
+</div>
+
+<div class="controls" id="controls">
+  <button class="filter-btn active" data-filter="ALL">ALL</button>
+  <button class="filter-btn" data-filter="NOT MISSION READY">NOT MISSION READY</button>
+  <button class="filter-btn" data-filter="DEGRADED">DEGRADED</button>
+  <button class="filter-btn" data-filter="READY">READY</button>
+  <span class="count" id="count-label"></span>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>RANK</th>
+      <th>ASSET</th>
+      <th>TYPE</th>
+      <th>STATUS</th>
+      <th>RISK</th>
+      <th>PREDICTED FAILURE</th>
+      <th>NEXT MISSION</th>
+    </tr>
+  </thead>
+  <tbody id="table-body"><tr data-asset="AST-006">
+      <td class="asset-id">01</td>
+      <td class="asset-id">AST-006</td>
+      <td>Comms Equipment</td>
+      <td><span class="status-pill notready">NOT MISSION READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:100.0%; background:#f85149"></div></div>
+          <span class="risk-num">120</span>
+        </div>
+      </td>
+      <td class="failwin soon">14.7d &middot; Temperature</td>
+      <td class="failwin">19d</td>
+    </tr>
+<tr data-asset="AST-003">
+      <td class="asset-id">02</td>
+      <td class="asset-id">AST-003</td>
+      <td>Comms Equipment</td>
+      <td><span class="status-pill notready">NOT MISSION READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:91.66666666666667%; background:#f85149"></div></div>
+          <span class="risk-num">110</span>
+        </div>
+      </td>
+      <td class="failwin urgent">5.9d &middot; Temperature</td>
+      <td class="failwin">6d</td>
+    </tr>
+<tr data-asset="AST-008">
+      <td class="asset-id">03</td>
+      <td class="asset-id">AST-008</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill notready">NOT MISSION READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:91.66666666666667%; background:#f85149"></div></div>
+          <span class="risk-num">110</span>
+        </div>
+      </td>
+      <td class="failwin urgent">2.7d &middot; Temperature</td>
+      <td class="failwin">11d</td>
+    </tr>
+<tr data-asset="AST-019">
+      <td class="asset-id">04</td>
+      <td class="asset-id">AST-019</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill notready">NOT MISSION READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:83.33333333333334%; background:#f85149"></div></div>
+          <span class="risk-num">100</span>
+        </div>
+      </td>
+      <td class="failwin urgent">4.6d &middot; Temperature</td>
+      <td class="failwin">43d</td>
+    </tr>
+<tr data-asset="AST-018">
+      <td class="asset-id">05</td>
+      <td class="asset-id">AST-018</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill notready">NOT MISSION READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:58.333333333333336%; background:#f85149"></div></div>
+          <span class="risk-num">70</span>
+        </div>
+      </td>
+      <td class="failwin urgent">0.1d &middot; Vibration</td>
+      <td class="failwin">37d</td>
+    </tr>
+<tr data-asset="AST-004">
+      <td class="asset-id">06</td>
+      <td class="asset-id">AST-004</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">145.7d &middot; Pressure</td>
+      <td class="failwin">22d</td>
+    </tr>
+<tr data-asset="AST-001">
+      <td class="asset-id">07</td>
+      <td class="asset-id">AST-001</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">545.8d &middot; Vibration</td>
+      <td class="failwin">45d</td>
+    </tr>
+<tr data-asset="AST-002">
+      <td class="asset-id">08</td>
+      <td class="asset-id">AST-002</td>
+      <td>Ground Vehicle</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">302.1d &middot; Temperature</td>
+      <td class="failwin">12d</td>
+    </tr>
+<tr data-asset="AST-009">
+      <td class="asset-id">09</td>
+      <td class="asset-id">AST-009</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">356.6d &middot; Vibration</td>
+      <td class="failwin">39d</td>
+    </tr>
+<tr data-asset="AST-010">
+      <td class="asset-id">10</td>
+      <td class="asset-id">AST-010</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">360.4d &middot; Vibration</td>
+      <td class="failwin">10d</td>
+    </tr>
+<tr data-asset="AST-005">
+      <td class="asset-id">11</td>
+      <td class="asset-id">AST-005</td>
+      <td>Ground Vehicle</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">5433.7d &middot; Pressure</td>
+      <td class="failwin">20d</td>
+    </tr>
+<tr data-asset="AST-007">
+      <td class="asset-id">12</td>
+      <td class="asset-id">AST-007</td>
+      <td>Ground Vehicle</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">435.4d &middot; Vibration</td>
+      <td class="failwin">13d</td>
+    </tr>
+<tr data-asset="AST-012">
+      <td class="asset-id">13</td>
+      <td class="asset-id">AST-012</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">285.9d &middot; Pressure</td>
+      <td class="failwin">32d</td>
+    </tr>
+<tr data-asset="AST-011">
+      <td class="asset-id">14</td>
+      <td class="asset-id">AST-011</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">nand &middot; nan</td>
+      <td class="failwin">42d</td>
+    </tr>
+<tr data-asset="AST-013">
+      <td class="asset-id">15</td>
+      <td class="asset-id">AST-013</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">3072.2d &middot; Temperature</td>
+      <td class="failwin">7d</td>
+    </tr>
+<tr data-asset="AST-014">
+      <td class="asset-id">16</td>
+      <td class="asset-id">AST-014</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">388.4d &middot; Temperature</td>
+      <td class="failwin">6d</td>
+    </tr>
+<tr data-asset="AST-016">
+      <td class="asset-id">17</td>
+      <td class="asset-id">AST-016</td>
+      <td>Aircraft</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">247.7d &middot; Vibration</td>
+      <td class="failwin">18d</td>
+    </tr>
+<tr data-asset="AST-015">
+      <td class="asset-id">18</td>
+      <td class="asset-id">AST-015</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">493.4d &middot; Pressure</td>
+      <td class="failwin">10d</td>
+    </tr>
+<tr data-asset="AST-017">
+      <td class="asset-id">19</td>
+      <td class="asset-id">AST-017</td>
+      <td>Radar Equipment</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">216.5d &middot; Temperature</td>
+      <td class="failwin">19d</td>
+    </tr>
+<tr data-asset="AST-020">
+      <td class="asset-id">20</td>
+      <td class="asset-id">AST-020</td>
+      <td>Ground Vehicle</td>
+      <td><span class="status-pill ready">READY</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0.0%; background:#3fb950"></div></div>
+          <span class="risk-num">0</span>
+        </div>
+      </td>
+      <td class="failwin ok">2014.7d &middot; Vibration</td>
+      <td class="failwin">6d</td>
+    </tr></tbody>
+</table>
+
+<div class="footer-note">
+  DATA SOURCE: sensor_logs.csv (30-day HUMS trend) + service_records.csv &middot; Classifier: rule-based threshold + linear drift extrapolation &middot; Click a row to expand asset detail
+</div>
+
+<script>
+const DATA = {"assets": [{"priority_rank": 1, "asset_id": "AST-006", "asset_type": "Comms Equipment", "readiness_status": "NOT MISSION READY", "risk_score": 120, "predicted_failure_days": 14.7, "predicted_failure_component": "Temperature", "days_to_next_mission": 19, "reasons": "Vibration at critical level (8.8 mm/s); Temperature trending up (+0.65\u00b0C/day); Pressure critically low (78.0 psi); 5 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records", "maintenance_action": "[IMMEDIATE] Inspect/service Comms Equipment AST-006. Predicted Temperature failure in ~14.7 days. Next mission in 19 days."}, {"priority_rank": 2, "asset_id": "AST-003", "asset_type": "Comms Equipment", "readiness_status": "NOT MISSION READY", "risk_score": 110, "predicted_failure_days": 5.9, "predicted_failure_component": "Temperature", "days_to_next_mission": 6, "reasons": "Vibration at critical level (8.4 mm/s); Temperature trending up (+0.67\u00b0C/day); Pressure trending down (-0.62 psi/day); 3 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records", "maintenance_action": "[IMMEDIATE] Inspect/service Comms Equipment AST-003. Predicted Temperature failure in ~5.9 days. Next mission in 6 days."}, {"priority_rank": 3, "asset_id": "AST-008", "asset_type": "Aircraft", "readiness_status": "NOT MISSION READY", "risk_score": 110, "predicted_failure_days": 2.7, "predicted_failure_component": "Temperature", "days_to_next_mission": 11, "reasons": "Vibration at critical level (8.7 mm/s); Temperature trending up (+0.70\u00b0C/day); Pressure critically low (79.2 psi); 2 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records", "maintenance_action": "[IMMEDIATE] Inspect/service Aircraft AST-008. Predicted Temperature failure in ~2.7 days. Next mission in 11 days."}, {"priority_rank": 4, "asset_id": "AST-019", "asset_type": "Radar Equipment", "readiness_status": "NOT MISSION READY", "risk_score": 100, "predicted_failure_days": 4.6, "predicted_failure_component": "Temperature", "days_to_next_mission": 43, "reasons": "Vibration at critical level (8.1 mm/s); Temperature trending up (+0.71\u00b0C/day); Pressure critically low (77.7 psi); 1 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records", "maintenance_action": "[IMMEDIATE] Inspect/service Radar Equipment AST-019. Predicted Temperature failure in ~4.6 days. Next mission in 43 days."}, {"priority_rank": 5, "asset_id": "AST-018", "asset_type": "Aircraft", "readiness_status": "NOT MISSION READY", "risk_score": 70, "predicted_failure_days": 0.1, "predicted_failure_component": "Vibration", "days_to_next_mission": 37, "reasons": "Vibration trending up (+0.18 mm/s/day); Temperature trending up (+0.63\u00b0C/day); 2 fault code(s) logged in last 30 days; Scheduled inspection overdue per service records", "maintenance_action": "[IMMEDIATE] Inspect/service Aircraft AST-018. Predicted Vibration failure in ~0.1 days. Next mission in 37 days."}, {"priority_rank": 6, "asset_id": "AST-004", "asset_type": "Aircraft", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 145.7, "predicted_failure_component": "Pressure", "days_to_next_mission": 22, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 7, "asset_id": "AST-001", "asset_type": "Aircraft", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 545.8, "predicted_failure_component": "Vibration", "days_to_next_mission": 45, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 8, "asset_id": "AST-002", "asset_type": "Ground Vehicle", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 302.1, "predicted_failure_component": "Temperature", "days_to_next_mission": 12, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 9, "asset_id": "AST-009", "asset_type": "Radar Equipment", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 356.6, "predicted_failure_component": "Vibration", "days_to_next_mission": 39, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 10, "asset_id": "AST-010", "asset_type": "Radar Equipment", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 360.4, "predicted_failure_component": "Vibration", "days_to_next_mission": 10, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 11, "asset_id": "AST-005", "asset_type": "Ground Vehicle", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 5433.7, "predicted_failure_component": "Pressure", "days_to_next_mission": 20, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 12, "asset_id": "AST-007", "asset_type": "Ground Vehicle", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 435.4, "predicted_failure_component": "Vibration", "days_to_next_mission": 13, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 13, "asset_id": "AST-012", "asset_type": "Radar Equipment", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 285.9, "predicted_failure_component": "Pressure", "days_to_next_mission": 32, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 14, "asset_id": "AST-011", "asset_type": "Aircraft", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": NaN, "predicted_failure_component": NaN, "days_to_next_mission": 42, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 15, "asset_id": "AST-013", "asset_type": "Aircraft", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 3072.2, "predicted_failure_component": "Temperature", "days_to_next_mission": 7, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 16, "asset_id": "AST-014", "asset_type": "Radar Equipment", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 388.4, "predicted_failure_component": "Temperature", "days_to_next_mission": 6, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 17, "asset_id": "AST-016", "asset_type": "Aircraft", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 247.7, "predicted_failure_component": "Vibration", "days_to_next_mission": 18, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 18, "asset_id": "AST-015", "asset_type": "Radar Equipment", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 493.4, "predicted_failure_component": "Pressure", "days_to_next_mission": 10, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 19, "asset_id": "AST-017", "asset_type": "Radar Equipment", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 216.5, "predicted_failure_component": "Temperature", "days_to_next_mission": 19, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}, {"priority_rank": 20, "asset_id": "AST-020", "asset_type": "Ground Vehicle", "readiness_status": "READY", "risk_score": 0, "predicted_failure_days": 2014.7, "predicted_failure_component": "Vibration", "days_to_next_mission": 6, "reasons": "No anomalies detected", "maintenance_action": "No action needed \u2014 continue standard monitoring."}], "trends": {"AST-006": {"vibration": [3.0, 2.77, 2.79, 3.94, 3.52, 3.79, 3.82, 3.64, 3.78, 5.2, 4.66, 4.38, 4.33, 5.46, 4.58, 5.5, 4.51, 5.46, 6.5, 6.89, 6.5, 5.51, 6.05, 6.0, 6.84, 6.96, 6.25, 6.72, 9.22, 8.8], "temperature": [63.55, 65.04, 64.92, 64.08, 64.85, 66.12, 66.0, 63.92, 70.15, 69.32, 71.34, 69.46, 71.82, 74.63, 73.03, 72.25, 72.0, 80.22, 74.72, 72.28, 80.33, 73.06, 79.54, 81.41, 77.05, 78.61, 81.42, 77.98, 82.38, 80.46], "pressure": [96.17, 96.05, 96.01, 96.66, 95.82, 96.43, 93.74, 96.74, 94.29, 95.16, 89.65, 88.1, 94.12, 93.17, 93.68, 90.11, 90.72, 90.61, 87.75, 85.7, 85.73, 86.85, 86.38, 86.71, 81.61, 85.32, 84.91, 78.47, 79.37, 77.95], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-003": {"vibration": [1.83, 2.21, 2.43, 2.39, 2.46, 2.78, 2.62, 3.94, 3.41, 3.97, 4.31, 3.58, 4.54, 4.72, 4.47, 4.86, 5.77, 5.0, 6.33, 5.35, 6.69, 5.03, 6.43, 6.0, 5.99, 8.12, 6.82, 5.38, 6.06, 8.44], "temperature": [72.46, 73.05, 73.38, 71.4, 74.84, 75.32, 76.61, 77.63, 73.88, 77.95, 78.22, 80.5, 79.37, 79.42, 82.92, 84.47, 81.79, 81.48, 89.46, 85.1, 82.76, 85.0, 82.39, 91.13, 94.28, 91.33, 91.37, 89.0, 87.29, 86.09], "pressure": [104.29, 107.24, 103.45, 106.58, 104.28, 103.94, 103.66, 104.87, 102.67, 108.94, 101.77, 100.83, 98.78, 96.19, 96.22, 96.51, 95.62, 96.18, 90.63, 98.29, 94.76, 93.28, 95.97, 96.29, 89.29, 89.37, 88.67, 90.6, 95.37, 88.04], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-008": {"vibration": [2.77, 2.24, 2.77, 2.65, 2.58, 2.23, 3.41, 3.56, 3.69, 3.61, 4.15, 4.53, 5.48, 5.46, 4.32, 4.6, 5.23, 5.08, 5.29, 6.62, 6.65, 5.44, 5.99, 5.99, 6.49, 7.09, 7.29, 7.16, 8.44, 8.74], "temperature": [61.69, 64.17, 66.88, 64.12, 66.05, 67.25, 68.26, 70.28, 72.2, 71.61, 70.64, 70.96, 72.84, 73.07, 72.64, 74.47, 77.55, 75.01, 74.22, 75.38, 75.17, 77.6, 78.29, 81.92, 77.26, 81.26, 78.54, 81.51, 86.95, 88.12], "pressure": [96.54, 93.04, 93.26, 98.21, 93.9, 93.46, 97.52, 90.64, 91.64, 91.53, 91.2, 89.79, 85.08, 85.83, 84.89, 91.19, 89.88, 89.23, 84.62, 85.49, 83.37, 83.03, 85.21, 87.35, 77.81, 86.56, 81.78, 80.53, 82.17, 79.23], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-019": {"vibration": [1.96, 3.18, 3.14, 3.22, 3.62, 2.89, 3.01, 3.96, 3.88, 4.59, 4.13, 4.59, 5.52, 5.6, 4.5, 5.28, 5.54, 5.64, 5.58, 6.92, 5.4, 6.13, 6.41, 6.37, 6.27, 6.26, 7.99, 6.93, 8.07, 8.09], "temperature": [62.9, 62.32, 63.61, 65.56, 63.85, 64.67, 70.06, 68.61, 65.82, 71.6, 69.14, 71.1, 70.48, 73.5, 69.8, 74.22, 72.21, 71.07, 76.67, 76.8, 74.35, 78.27, 78.71, 78.38, 78.26, 83.7, 78.34, 83.27, 78.14, 86.75], "pressure": [98.39, 98.14, 95.43, 93.24, 93.85, 94.19, 93.12, 93.41, 91.36, 96.06, 90.97, 88.79, 88.14, 89.28, 90.54, 86.62, 86.31, 86.17, 88.68, 84.73, 83.0, 85.2, 83.09, 83.16, 81.8, 80.63, 82.77, 85.22, 81.61, 77.73], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-018": {"vibration": [2.47, 3.07, 3.3, 3.52, 3.68, 3.44, 4.68, 3.82, 4.54, 4.75, 4.64, 5.51, 5.82, 5.55, 5.09, 4.93, 5.27, 5.36, 5.75, 5.57, 5.45, 6.84, 8.63, 7.33, 6.89, 8.2, 7.1, 7.95, 9.43, 6.98], "temperature": [64.47, 64.64, 66.06, 62.22, 69.52, 68.13, 70.19, 69.27, 69.77, 70.3, 70.77, 72.25, 73.62, 73.89, 75.72, 75.9, 73.74, 78.52, 79.26, 75.63, 75.41, 76.55, 81.83, 81.42, 77.68, 79.81, 81.97, 81.52, 79.18, 84.04], "pressure": [103.03, 98.67, 98.84, 103.99, 98.92, 99.92, 98.3, 96.29, 99.47, 97.14, 91.61, 95.51, 92.41, 93.03, 94.56, 95.27, 93.61, 93.06, 93.29, 92.38, 91.71, 88.5, 91.36, 91.81, 85.85, 89.8, 86.7, 87.99, 88.86, 88.11], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-004": {"vibration": [2.15, 2.34, 2.49, 2.77, 2.23, 2.67, 2.48, 2.49, 2.45, 3.05, 2.5, 2.72, 2.49, 2.64, 3.05, 3.0, 2.68, 2.4, 2.24, 2.98, 2.37, 3.12, 2.6, 2.4, 2.53, 2.15, 2.64, 3.07, 2.33, 2.86], "temperature": [67.06, 64.2, 64.58, 63.41, 67.35, 60.27, 64.74, 63.19, 64.89, 64.79, 62.52, 65.4, 66.73, 63.77, 65.83, 64.22, 64.83, 65.37, 62.17, 65.76, 64.15, 62.82, 62.53, 63.05, 64.67, 64.64, 62.74, 67.13, 64.14, 63.6], "pressure": [104.27, 102.17, 100.99, 102.77, 107.18, 102.55, 100.16, 103.33, 103.48, 102.67, 103.03, 101.14, 102.43, 104.08, 104.7, 99.85, 101.08, 107.06, 104.26, 102.67, 101.01, 100.34, 102.02, 101.52, 99.37, 96.56, 101.72, 100.3, 100.73, 98.3], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-001": {"vibration": [2.35, 2.31, 2.71, 2.22, 1.64, 2.0, 1.84, 2.43, 2.45, 2.16, 3.15, 2.73, 1.62, 2.7, 2.28, 2.22, 1.7, 2.13, 2.78, 2.54, 2.33, 2.73, 2.81, 2.55, 3.03, 2.44, 1.61, 3.0, 2.2, 2.19], "temperature": [67.93, 69.98, 70.09, 68.02, 67.42, 65.81, 65.12, 66.48, 65.85, 67.69, 65.73, 64.82, 67.35, 67.33, 66.7, 65.49, 67.62, 66.16, 69.0, 66.32, 65.98, 64.54, 66.79, 65.64, 66.86, 68.58, 67.12, 67.65, 65.32, 67.59], "pressure": [110.45, 107.81, 107.1, 107.11, 103.33, 109.45, 112.9, 104.23, 105.05, 107.63, 108.47, 104.85, 104.52, 109.02, 104.07, 111.68, 109.48, 110.34, 105.99, 111.43, 105.19, 112.58, 109.59, 113.12, 100.65, 107.61, 107.85, 106.95, 111.25, 110.05], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-002": {"vibration": [2.72, 2.17, 2.43, 1.76, 2.01, 3.08, 2.3, 2.35, 2.45, 2.79, 1.97, 2.56, 2.1, 1.71, 2.52, 2.02, 1.84, 1.69, 2.64, 2.54, 2.47, 2.45, 2.52, 1.94, 2.0, 2.66, 2.03, 2.3, 2.66, 2.22], "temperature": [70.52, 69.67, 70.91, 69.85, 69.64, 71.13, 70.84, 70.27, 69.94, 67.99, 71.9, 67.52, 68.34, 69.32, 68.2, 73.42, 71.95, 72.94, 70.84, 67.68, 70.82, 70.79, 74.05, 71.64, 72.64, 71.15, 69.83, 68.69, 70.88, 73.23], "pressure": [94.38, 92.1, 96.5, 95.22, 96.0, 97.01, 90.73, 103.88, 96.38, 98.74, 100.69, 103.06, 96.78, 96.69, 93.73, 95.52, 97.17, 97.04, 92.77, 97.38, 94.45, 94.34, 92.91, 98.85, 99.38, 102.18, 93.82, 97.51, 96.52, 104.65], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-009": {"vibration": [2.67, 3.42, 3.49, 3.43, 2.67, 3.45, 3.76, 3.1, 3.06, 3.11, 2.81, 2.97, 3.42, 3.12, 3.31, 3.34, 4.08, 3.6, 2.72, 3.32, 2.82, 3.57, 3.53, 3.52, 2.84, 3.33, 3.36, 3.39, 3.23, 3.85], "temperature": [62.48, 63.36, 61.91, 60.31, 62.69, 62.81, 65.2, 59.31, 62.9, 60.36, 60.02, 63.98, 62.86, 63.27, 66.99, 60.46, 60.62, 60.74, 63.11, 61.37, 62.22, 63.09, 63.54, 58.55, 62.41, 63.98, 61.93, 60.84, 61.0, 60.91], "pressure": [96.1, 99.59, 98.52, 97.21, 103.23, 103.09, 94.62, 100.22, 100.7, 95.92, 97.21, 108.04, 97.57, 100.51, 103.59, 105.45, 102.27, 103.06, 97.96, 102.0, 101.28, 103.38, 99.93, 100.77, 96.9, 102.19, 102.96, 98.76, 100.81, 97.46], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-010": {"vibration": [2.31, 2.9, 2.85, 2.28, 2.34, 3.12, 2.38, 2.09, 2.58, 2.88, 2.76, 2.56, 3.47, 2.24, 2.96, 2.16, 2.74, 3.11, 2.33, 2.75, 2.17, 2.48, 2.58, 3.5, 2.91, 2.72, 2.93, 2.92, 2.75, 2.97], "temperature": [69.63, 70.4, 70.54, 72.13, 74.6, 72.91, 69.16, 68.17, 69.93, 68.01, 69.9, 70.77, 70.58, 68.94, 68.73, 68.86, 68.9, 66.97, 68.78, 70.67, 69.65, 68.54, 68.97, 72.38, 69.02, 73.7, 71.18, 71.02, 72.77, 70.3], "pressure": [108.29, 99.49, 104.19, 108.17, 102.61, 102.38, 99.91, 101.64, 108.6, 103.3, 100.58, 105.42, 102.03, 102.28, 108.21, 105.36, 104.55, 109.33, 104.8, 109.97, 99.81, 109.33, 103.89, 102.35, 105.99, 102.87, 106.41, 107.45, 103.44, 101.49], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-005": {"vibration": [3.94, 3.6, 3.33, 3.33, 3.71, 3.67, 3.0, 2.47, 3.38, 3.7, 3.52, 3.8, 3.87, 2.69, 3.34, 2.9, 3.53, 2.71, 3.02, 3.8, 4.03, 3.58, 3.6, 2.85, 3.61, 3.98, 3.3, 2.5, 3.59, 3.12], "temperature": [71.89, 71.65, 71.3, 69.3, 73.75, 69.32, 75.23, 69.65, 69.33, 74.6, 69.05, 74.51, 67.42, 73.33, 70.86, 72.1, 71.09, 68.6, 71.51, 71.08, 74.97, 72.79, 68.92, 67.33, 70.31, 71.0, 67.44, 70.78, 68.24, 68.97], "pressure": [101.2, 100.32, 101.82, 103.02, 107.98, 102.07, 99.01, 99.95, 102.55, 99.79, 97.56, 100.12, 101.18, 99.73, 100.17, 101.1, 103.66, 105.36, 106.18, 101.73, 100.78, 105.63, 104.7, 95.41, 106.03, 97.38, 102.68, 101.26, 102.62, 98.35], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-007": {"vibration": [2.66, 2.12, 3.03, 3.15, 3.22, 2.92, 2.95, 3.46, 2.95, 2.37, 3.78, 3.45, 3.42, 3.25, 4.02, 2.93, 2.77, 3.31, 2.91, 2.94, 2.74, 3.28, 2.62, 3.38, 2.66, 3.16, 3.2, 3.87, 2.91, 3.14], "temperature": [75.02, 76.23, 74.5, 72.14, 75.68, 72.52, 74.13, 77.5, 75.75, 71.33, 73.38, 72.91, 73.82, 75.63, 74.61, 73.84, 75.01, 72.39, 75.42, 71.39, 74.86, 76.06, 71.8, 76.34, 73.91, 73.6, 74.31, 74.29, 76.53, 73.09], "pressure": [94.7, 90.72, 94.22, 92.64, 94.12, 91.81, 93.98, 92.13, 86.99, 92.05, 94.09, 86.48, 88.67, 91.86, 93.65, 90.56, 93.32, 94.11, 92.3, 94.24, 95.72, 98.74, 87.77, 92.94, 100.45, 95.29, 90.74, 97.15, 90.14, 96.39], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-012": {"vibration": [2.31, 2.72, 3.38, 3.68, 2.86, 3.48, 2.91, 3.95, 3.2, 2.99, 2.89, 3.81, 3.17, 3.02, 3.38, 2.63, 3.54, 3.55, 3.48, 3.71, 3.28, 2.9, 3.59, 3.43, 2.43, 2.6, 3.26, 3.15, 2.92, 3.72], "temperature": [66.1, 64.32, 69.28, 66.83, 65.81, 66.47, 67.79, 66.08, 69.16, 64.72, 66.73, 69.97, 65.76, 63.64, 66.49, 68.84, 66.14, 64.77, 65.34, 62.53, 64.44, 66.21, 65.64, 64.95, 67.98, 63.45, 64.75, 66.64, 67.68, 64.83], "pressure": [92.74, 92.64, 91.77, 96.25, 95.58, 95.39, 97.43, 91.41, 91.53, 94.75, 93.41, 94.79, 95.32, 88.47, 92.03, 89.09, 98.53, 93.37, 95.44, 97.62, 94.96, 91.47, 95.11, 84.93, 92.39, 96.96, 93.34, 89.63, 88.81, 96.03], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-011": {"vibration": [2.13, 2.36, 2.59, 2.16, 2.92, 2.53, 2.37, 2.34, 1.68, 2.91, 3.04, 2.46, 2.57, 1.78, 2.25, 1.68, 2.39, 1.79, 2.73, 2.52, 2.82, 2.25, 3.01, 2.34, 2.03, 2.11, 2.59, 1.9, 1.82, 2.2], "temperature": [69.05, 70.87, 65.6, 72.64, 68.81, 68.87, 67.42, 66.26, 70.71, 69.07, 67.21, 63.92, 66.27, 67.19, 69.62, 66.18, 68.23, 69.02, 68.15, 69.23, 69.6, 69.73, 66.96, 65.45, 70.0, 64.54, 65.15, 69.17, 68.31, 70.07], "pressure": [103.38, 103.44, 105.24, 103.96, 103.01, 103.86, 106.52, 101.2, 101.62, 103.1, 98.95, 101.79, 104.03, 105.92, 108.84, 101.22, 102.57, 107.63, 104.33, 104.64, 103.89, 107.62, 103.18, 101.26, 101.96, 96.03, 105.66, 103.16, 107.81, 103.38], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-013": {"vibration": [2.47, 2.76, 2.7, 2.58, 2.63, 2.64, 2.75, 3.44, 2.19, 2.36, 2.7, 2.67, 2.59, 3.05, 2.15, 2.73, 2.74, 3.25, 2.99, 2.85, 3.16, 2.54, 2.03, 2.21, 2.08, 2.33, 2.48, 2.05, 3.59, 2.85], "temperature": [67.84, 72.69, 70.6, 68.14, 69.99, 68.38, 70.37, 62.74, 70.75, 66.43, 68.16, 69.53, 73.34, 70.64, 69.81, 66.24, 68.41, 69.38, 68.05, 66.08, 67.94, 68.79, 66.34, 66.84, 67.26, 70.56, 70.5, 73.12, 70.58, 69.66], "pressure": [105.71, 107.96, 105.9, 106.56, 108.87, 100.68, 109.67, 106.26, 108.51, 112.42, 109.28, 107.77, 107.28, 110.24, 111.57, 104.41, 107.64, 108.04, 110.24, 108.78, 106.22, 106.72, 111.46, 100.21, 111.6, 113.43, 99.18, 101.74, 110.83, 109.23], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-014": {"vibration": [2.43, 2.01, 2.28, 2.39, 1.69, 1.92, 1.93, 2.07, 2.49, 2.4, 2.14, 2.33, 2.05, 1.82, 2.67, 2.05, 3.17, 2.57, 2.26, 2.7, 1.77, 1.99, 2.09, 2.16, 1.91, 2.33, 1.69, 1.52, 1.83, 2.03], "temperature": [66.08, 64.43, 61.17, 62.35, 66.39, 66.44, 65.66, 61.89, 61.37, 65.66, 64.81, 65.64, 63.15, 68.06, 63.12, 67.05, 62.89, 65.18, 64.19, 64.26, 63.44, 69.72, 67.91, 67.81, 63.39, 62.11, 65.03, 66.23, 67.01, 65.4], "pressure": [106.03, 104.87, 102.75, 109.89, 102.75, 105.04, 106.03, 106.67, 105.66, 109.81, 106.08, 105.84, 101.51, 103.64, 104.83, 106.55, 102.15, 106.96, 105.85, 112.35, 105.45, 110.63, 107.42, 105.1, 103.77, 103.41, 106.71, 106.84, 110.73, 105.55], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-016": {"vibration": [2.05, 2.54, 2.92, 2.76, 2.38, 2.76, 2.41, 2.22, 2.68, 2.52, 2.57, 3.06, 3.39, 2.95, 2.82, 2.23, 2.5, 3.24, 2.46, 2.64, 2.99, 2.51, 2.87, 2.98, 2.43, 3.59, 2.66, 3.11, 2.88, 2.96], "temperature": [67.79, 71.65, 69.04, 70.5, 70.37, 69.82, 69.25, 73.56, 73.08, 72.21, 71.49, 68.92, 72.74, 68.63, 74.16, 70.5, 72.54, 71.21, 72.13, 73.14, 72.79, 74.46, 70.25, 71.15, 69.4, 66.2, 69.69, 71.77, 69.8, 73.35], "pressure": [107.5, 98.1, 101.44, 107.61, 109.46, 103.07, 105.36, 101.03, 103.87, 111.35, 112.35, 106.77, 105.97, 103.84, 104.78, 102.96, 102.73, 108.03, 101.61, 105.12, 107.24, 108.66, 110.46, 109.09, 102.74, 102.57, 106.8, 104.13, 105.13, 108.08], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-015": {"vibration": [2.51, 2.55, 2.12, 2.92, 2.36, 3.41, 2.36, 2.77, 1.95, 2.04, 3.48, 2.52, 2.37, 2.22, 2.18, 2.49, 2.67, 3.04, 1.96, 2.24, 2.7, 2.51, 2.43, 3.1, 3.08, 2.24, 2.55, 2.66, 1.89, 1.94], "temperature": [70.22, 67.26, 68.88, 71.57, 66.92, 69.38, 69.48, 68.79, 67.53, 70.12, 69.88, 70.78, 70.94, 69.74, 68.75, 67.3, 71.27, 70.74, 69.12, 68.49, 69.21, 70.07, 67.22, 70.3, 68.67, 68.43, 68.32, 69.11, 71.0, 70.97], "pressure": [100.45, 94.59, 96.63, 100.66, 102.48, 100.02, 99.24, 101.71, 93.33, 92.38, 98.82, 98.54, 99.64, 101.81, 100.45, 98.81, 98.76, 100.51, 95.64, 98.27, 98.62, 92.91, 95.21, 102.49, 99.28, 97.93, 99.32, 102.41, 91.17, 98.16], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-017": {"vibration": [3.57, 3.26, 3.34, 3.23, 4.14, 3.41, 3.37, 3.02, 3.34, 2.63, 2.86, 2.79, 3.27, 3.39, 2.94, 2.54, 3.61, 2.88, 3.91, 3.51, 2.88, 3.04, 3.49, 2.65, 2.36, 3.71, 3.85, 3.01, 3.54, 2.91], "temperature": [75.72, 71.8, 73.34, 74.44, 74.88, 70.88, 76.98, 71.95, 73.24, 75.19, 76.79, 74.43, 74.16, 73.52, 77.85, 76.26, 71.35, 79.51, 77.48, 76.81, 75.95, 74.39, 75.79, 77.35, 72.96, 74.15, 72.35, 75.56, 73.65, 77.48], "pressure": [103.72, 101.22, 106.89, 108.28, 104.87, 104.32, 102.76, 100.63, 108.19, 104.51, 102.77, 105.12, 100.51, 102.06, 103.85, 97.89, 101.52, 103.73, 109.36, 104.95, 100.72, 101.82, 103.44, 102.6, 102.93, 105.07, 106.84, 100.3, 108.83, 99.82], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, "AST-020": {"vibration": [2.28, 2.12, 2.41, 2.54, 2.58, 2.12, 3.07, 2.32, 1.69, 2.71, 2.26, 1.96, 2.53, 1.25, 1.6, 2.28, 2.86, 2.36, 2.0, 2.38, 3.01, 2.04, 2.32, 1.77, 2.64, 2.21, 2.87, 2.27, 2.03, 2.76], "temperature": [63.61, 63.09, 62.06, 60.52, 62.87, 63.57, 62.13, 60.7, 63.0, 59.26, 61.19, 63.72, 63.35, 63.4, 60.09, 64.14, 64.62, 62.88, 60.9, 61.04, 61.48, 61.79, 60.17, 60.01, 58.39, 58.48, 62.03, 61.63, 61.82, 59.8], "pressure": [97.32, 103.56, 105.96, 103.06, 101.03, 106.26, 103.17, 102.93, 100.67, 108.97, 104.05, 104.55, 104.4, 105.87, 105.37, 106.69, 108.76, 99.03, 110.35, 105.49, 101.97, 99.88, 102.55, 103.59, 104.08, 101.58, 98.21, 105.85, 102.88, 103.9], "dates": ["2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-22", "2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}}};
+
+function statusClass(status) {
+  if (status === "READY") return "ready";
+  if (status === "DEGRADED") return "degraded";
+  return "notready";
+}
+
+function riskColor(score) {
+  if (score >= 60) return "var(--red)";
+  if (score >= 30) return "var(--amber)";
+  return "var(--green)";
+}
+
+function failwinClass(days) {
+  if (days === null || days === undefined) return "ok";
+  if (days <= 7) return "urgent";
+  if (days <= 30) return "soon";
+  return "ok";
+}
+
+function renderClock() {
+  const el = document.getElementById("clock");
+  const now = new Date();
+  el.textContent = "SYSTEM TIME " + now.toISOString().slice(0,19).replace("T"," ") + " UTC";
+}
+renderClock();
+setInterval(renderClock, 1000);
+
+function renderSummary() {
+  const counts = { READY: 0, DEGRADED: 0, "NOT MISSION READY": 0 };
+  DATA.assets.forEach(a => counts[a.readiness_status] = (counts[a.readiness_status]||0) + 1);
+  const strip = document.getElementById("summary-strip");
+  strip.innerHTML = `
+    <div class="stat total"><div class="num">${DATA.assets.length}</div><div class="label">TOTAL FLEET ASSETS</div></div>
+    <div class="stat ready"><div class="num">${counts.READY||0}</div><div class="label">READY</div></div>
+    <div class="stat degraded"><div class="num">${counts.DEGRADED||0}</div><div class="label">DEGRADED</div></div>
+    <div class="stat notready"><div class="num">${counts["NOT MISSION READY"]||0}</div><div class="label">NOT MISSION READY</div></div>
+  `;
+}
+renderSummary();
+
+function sparkline(values, color) {
+  if (!values || values.length < 2) return "";
+  const w = 280, h = 36, pad = 3;
+  const min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+  const range = (max - min) || 1;
+  const step = (w - pad*2) / (values.length - 1);
+  const points = values.map((v,i) => {
+    const x = pad + i*step;
+    const y = h - pad - ((v - min) / range) * (h - pad*2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg class="trend" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.6"/>
+  </svg>`;
+}
+
+let currentFilter = "ALL";
+let expandedId = null;
+
+function renderTable() {
+  const tbody = document.getElementById("table-body");
+  const filtered = DATA.assets.filter(a => currentFilter === "ALL" || a.readiness_status === currentFilter);
+  document.getElementById("count-label").textContent = `${filtered.length} / ${DATA.assets.length} shown`;
+
+  tbody.innerHTML = "";
+  filtered.forEach(a => {
+    const tr = document.createElement("tr");
+    const fw = failwinClass(a.predicted_failure_days);
+    const failText = (a.predicted_failure_days === null || a.predicted_failure_days === undefined)
+      ? "&mdash;"
+      : `${a.predicted_failure_days}d &middot; ${a.predicted_failure_component}`;
+    tr.innerHTML = `
+      <td class="asset-id">${(a.priority_rank < 10 ? '0' : '') + a.priority_rank}</td>
+      <td class="asset-id">${a.asset_id}</td>
+      <td>${a.asset_type}</td>
+      <td><span class="status-pill ${statusClass(a.readiness_status)}">${a.readiness_status}</span></td>
+      <td>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:${Math.min(a.risk_score,120)/1.2}%; background:${riskColor(a.risk_score)}"></div></div>
+          <span class="risk-num">${a.risk_score}</span>
+        </div>
+      </td>
+      <td class="failwin ${fw}">${failText}</td>
+      <td class="failwin">${a.days_to_next_mission}d</td>
+    `;
+    tr.addEventListener("click", () => {
+      expandedId = expandedId === a.asset_id ? null : a.asset_id;
+      renderTable();
+    });
+    tbody.appendChild(tr);
+
+    if (expandedId === a.asset_id) {
+      const detailTr = document.createElement("tr");
+      detailTr.className = "detail-row";
+      const trend = DATA.trends[a.asset_id] || {};
+      const reasonsList = a.reasons.split("; ").map(r => `<li>${r}</li>`).join("");
+      detailTr.innerHTML = `
+        <td colspan="7">
+          <div class="detail-inner">
+            <div>
+              <h4>WHY THIS STATUS</h4>
+              <ul class="reason-list">${reasonsList}</ul>
+              <h4 style="margin-top:16px;">RECOMMENDED ACTION</h4>
+              <div class="action-box">${a.maintenance_action}</div>
+            </div>
+            <div class="charts">
+              <div>
+                <div class="chart-label"><span>VIBRATION (mm/s)</span><span>${trend.vibration ? trend.vibration[trend.vibration.length-1] : '--'}</span></div>
+                ${sparkline(trend.vibration, "#f85149")}
+              </div>
+              <div>
+                <div class="chart-label"><span>TEMPERATURE (&deg;C)</span><span>${trend.temperature ? trend.temperature[trend.temperature.length-1] : '--'}</span></div>
+                ${sparkline(trend.temperature, "#d29922")}
+              </div>
+              <div>
+                <div class="chart-label"><span>PRESSURE (psi)</span><span>${trend.pressure ? trend.pressure[trend.pressure.length-1] : '--'}</span></div>
+                ${sparkline(trend.pressure, "#58a6ff")}
+              </div>
+            </div>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(detailTr);
+    }
+  });
+}
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    renderTable();
+  });
+});
+
+renderTable();
+
+// Fallback safety net: if for any reason the table body is still empty
+// shortly after load (older WebKit render engines used by some
+// screenshot tools lack full ES6 support), force a re-render.
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    if (document.getElementById('table-body').children.length === 0) {
+      try { renderTable(); } catch (e) { console.error(e); }
+    }
+  }, 300);
+});
+</script>
+
+</body>
+</html>

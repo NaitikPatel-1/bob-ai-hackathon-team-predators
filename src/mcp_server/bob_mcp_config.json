@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "mission-readiness-copilot": {
+      "command": "python",
+      "args": ["src/mcp_server/readiness_mcp_server.py"],
+      "description": "Exposes fleet readiness analysis (sensor drift classifier + failure prediction) as tools Bob can call directly."
+    }
+  }
+}
